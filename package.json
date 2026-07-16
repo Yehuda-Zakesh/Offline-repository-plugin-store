@@ -1,0 +1,54 @@
+{
+  "name": "otzaria-plugins-offline",
+  "version": "1.0.0",
+  "description": "חנות תוספים לאוצריא - גרסה אופליין למחשב (Windows)",
+  "main": "main.js",
+  "author": "Otzaria",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --x64",
+    "dist:win-portable": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "org.otzaria.pluginsoffline",
+    "productName": "חנות תוספים לאוצריא - אופליין",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "directories": {
+      "output": "dist-build",
+      "buildResources": "assets"
+    }
+  }
+}
