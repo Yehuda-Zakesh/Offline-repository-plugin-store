@@ -1,6 +1,6 @@
 {
   "name": "otzaria-plugins-offline",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "חנות תוספים לאוצריא - גרסה אופליין למחשב (Windows)",
   "main": "main.js",
   "author": "Otzaria",
