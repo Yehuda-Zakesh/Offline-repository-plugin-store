@@ -18,6 +18,8 @@
     "appId": "org.otzaria.pluginsoffline",
     "productName": "חנות תוספים לאוצריא - אופליין",
     "asar": true,
+    "compression": "maximum",
+    "afterPack": "build/afterPack.js",
     "files": [
       "main.js",
       "preload.js",
