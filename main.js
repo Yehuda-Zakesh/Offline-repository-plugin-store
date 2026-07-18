@@ -7,8 +7,15 @@ const AdmZip = require('adm-zip')
 // כתובת האתר החי של אוצריא, ממנו שואבים את רשימת התוספים
 const BASE_URL = 'https://otzaria.org'
 
-// תיקיית האפליקציה עצמה: ליד קובץ ה-exe כשהאפליקציה ארוזה (portable), או תיקיית הפרויקט בזמן פיתוח
-const APP_DIR = app.isPackaged ? path.dirname(process.execPath) : __dirname
+// תיקיית האפליקציה עצמה - המקום שאליו נשמרים הנתונים, כדי שיהיו צמודים לתוכנה (נייד לגמרי):
+//   • גרסה ניידת (portable): electron-builder מחלץ את האפליקציה לתיקייה זמנית ומריץ משם,
+//     ולכן process.execPath מצביע על התיקייה הזמנית ולא על מיקום ה-EXE שהמשתמש הפעיל.
+//     המשתנה PORTABLE_EXECUTABLE_DIR מכיל את התיקייה של ה-EXE האמיתי - זה מה שאנחנו רוצים.
+//   • גרסה מותקנת (NSIS): תיקיית קובץ ההרצה המותקן.
+//   • זמן פיתוח: תיקיית הפרויקט.
+const APP_DIR =
+  process.env.PORTABLE_EXECUTABLE_DIR ||
+  (app.isPackaged ? path.dirname(process.execPath) : __dirname)
 
 // תיקיית הנתונים המקומית - צמודה לתיקיית האפליקציה עצמה, כדי שהעתקת התיקייה (למשל לדיסק-און-קי) תעביר גם את הנתונים
 const DATA_DIR = path.join(APP_DIR, 'plugins-store-data')
