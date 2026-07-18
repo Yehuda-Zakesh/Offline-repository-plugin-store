@@ -18,7 +18,7 @@
     status: 'all',
     tag: 'all',
     installedMap: {}, // { pluginId: 'installedVersion' } - נטען מאוצריא בפועל אצל המשתמש
-    hideInstalled: false // הצג רק מה שלא מותקן / יש לו עדכון זמין
+    hideInstalled: true // הצג רק מה שלא מותקן / יש לו עדכון זמין - מופעל כברירת מחדל
   }
 
   // ---------- השוואת גרסאות (semver בסיסי: major.minor.patch) ----------
