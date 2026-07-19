@@ -54,15 +54,17 @@ cargo tauri icon assets/logo.svg
 # הרצה מקומית לבדיקה (עם hot-reload):
 cargo tauri dev
 
-# בנייה סופית (installer NSIS):
+# בנייה סופית:
 cargo tauri build
 ```
 
-הקובץ הסופי ייווצר תחת:
-`src-tauri/target/release/bundle/nsis/*.exe` (installer)
-וגם `src-tauri/target/release/otzaria-plugins-store.exe` - קובץ ה-exe הגולמי, שהוא
-כבר **portable** מטבעו (בניגוד ל-Electron, Tauri לא מחלץ לתיקייה זמנית) - אפשר
-פשוט להעתיק אותו + תיקיית `plugins-store-data` לצידו לכל מקום (כולל דיסק-און-קי).
+**התוצר הוא קובץ יחיד**: `src-tauri/target/release/otzaria-plugins-store.exe`.
+אין installer בכלל (הפקתו כובתה בכוונה ב-`tauri.conf.json` דרך `"bundle": {"active": false}`) -
+זו תוכנה ניידת (portable) לגמרי: אפשר להעביר את קובץ ה-exe הזה לכל מקום (כולל
+דיסק-און-קי), ובכל הרצה הוא יוצר/מחפש את תיקיית `plugins-store-data` (עם ה-DB וקבצי
+התוספים שהורדו) **תמיד ליד עצמו** - לא בתיקיית משתמש כלשהי במערכת, ולא באיזשהו נתיב
+זמני. זה עובד כך גם ב-Electron הישן וגם כאן, כי `main.rs` מחשב את הנתיב לפי מיקום
+ה-exe הרץ (`std::env::current_exe()`), לא לפי OS-specific user-data folder.
 
 ## אם יש שגיאות קימפול
 
