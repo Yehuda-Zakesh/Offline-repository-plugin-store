@@ -333,6 +333,54 @@ ipcMain.handle('download-plugin', async (_event, id) => {
   return { ok: true, path: result.filePath }
 })
 
+// התקנה ישירה מקומית: אוצריא תומכת ב-otzaria://plugin/install-local?path=<נתיב מוחלט מקודד>,
+// שקורא את קובץ ה-.otzplugin ישירות מהדיסק ללא כל גישה לרשת (בניגוד ל-install?url= הישן).
+// כדי שזה יעבוד תמיד - גם אם המשתמש עדיין לא סינכרן/הוריד את התוסף הזה - מורידים את הקובץ
+// כעת ברקע אם הוא חסר, לפני בניית ה-URL.
+ipcMain.handle('direct-install-plugin', async (_event, id) => {
+  ensureDataDirs()
+  const db = loadDB()
+  const plugin = (db.plugins || []).find((p) => p.id === id)
+  if (!plugin) {
+    return { ok: false, error: 'התוסף לא נמצא. יש לבצע סנכרון קודם.' }
+  }
+
+  if (!plugin.localFile) {
+    if (!plugin.remoteDownloadUrl) {
+      return { ok: false, error: 'קובץ התוסף אינו זמין. יש לבצע סנכרון קודם.' }
+    }
+    try {
+      const pluginDir = path.join(FILES_DIR, plugin.id)
+      fs.mkdirSync(pluginDir, { recursive: true })
+      const fileResult = await downloadToFile(plugin.remoteDownloadUrl, path.join(pluginDir, 'plugin'), {
+        preferredExt: '.otzplugin'
+      })
+      plugin.localFile = {
+        path: path.relative(DATA_DIR, fileResult.path),
+        fileName: fileResult.originalName || `${plugin.name}${fileResult.ext}`,
+        ext: fileResult.ext,
+        size: fileResult.size
+      }
+      plugin.manifestId = readManifestIdFromPluginFile(fileResult.path)
+      saveDB(db)
+    } catch (err) {
+      return { ok: false, error: 'לא ניתן להוריד את קובץ התוסף: ' + err.message }
+    }
+  }
+
+  const absPath = path.join(DATA_DIR, plugin.localFile.path)
+  if (!fs.existsSync(absPath)) {
+    return { ok: false, error: 'קובץ התוסף המקומי חסר. יש לבצע סנכרון מחדש.' }
+  }
+  if (path.extname(absPath).toLowerCase() !== '.otzplugin') {
+    return { ok: false, error: 'קובץ התוסף אינו בסיומת otzplugin תקינה.' }
+  }
+
+  const url = `otzaria://plugin/install-local?path=${encodeURIComponent(absPath)}`
+  shell.openExternal(url)
+  return { ok: true }
+})
+
 ipcMain.handle('open-install-url', (_event, url) => {
   shell.openExternal(url)
 })
