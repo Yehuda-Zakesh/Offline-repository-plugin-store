@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   syncNow: () => ipcRenderer.invoke('sync-now'),
   getInstalledPlugins: () => ipcRenderer.invoke('get-installed-plugins'),
   downloadPlugin: (id) => ipcRenderer.invoke('download-plugin', id),
+  directInstallPlugin: (id) => ipcRenderer.invoke('direct-install-plugin', id),
   openInstallUrl: (url) => ipcRenderer.invoke('open-install-url', url),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   onSyncProgress: (callback) => {

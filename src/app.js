@@ -340,7 +340,7 @@
       const dl = card.querySelector('[data-action="download"]')
       if (dl) dl.addEventListener('click', () => handleDownload(id, dl))
       const inst = card.querySelector('[data-action="direct-install"]')
-      if (inst) inst.addEventListener('click', () => handleDirectInstall(id))
+      if (inst) inst.addEventListener('click', () => handleDirectInstall(id, inst))
     })
   }
 
@@ -421,7 +421,7 @@
     document.getElementById('back-link').addEventListener('click', () => navigate(''))
     document.getElementById('detail-download').addEventListener('click', (e) => handleDownload(plugin.id, e.currentTarget))
     const installBtn = document.getElementById('detail-install')
-    if (installBtn) installBtn.addEventListener('click', () => handleDirectInstall(plugin.id))
+    if (installBtn) installBtn.addEventListener('click', () => handleDirectInstall(plugin.id, installBtn))
     const homeBtn = document.getElementById('detail-homepage')
     if (homeBtn) homeBtn.addEventListener('click', () => window.api.openExternal(plugin.homepage))
 
@@ -513,11 +513,19 @@
     }
   }
 
-  function handleDirectInstall(id) {
-    const plugin = state.plugins.find((p) => p.id === id)
-    if (!plugin || !plugin.remoteDownloadUrl) return
-    const url = `otzaria://plugin/install?url=${encodeURIComponent(plugin.remoteDownloadUrl)}`
-    window.api.openInstallUrl(url)
+  async function handleDirectInstall(id, triggerEl) {
+    const original = triggerEl ? triggerEl.textContent : null
+    if (triggerEl) { triggerEl.disabled = true; triggerEl.textContent = 'מתקין...' }
+    try {
+      const result = await window.api.directInstallPlugin(id)
+      if (!result.ok) {
+        alert(result.error || 'שגיאה בהתקנה ישירה')
+      }
+    } catch (err) {
+      alert('שגיאה בהתקנה ישירה: ' + err.message)
+    } finally {
+      if (triggerEl) { triggerEl.disabled = false; triggerEl.textContent = original }
+    }
   }
 
   // ---------- סנכרון ----------
