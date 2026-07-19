@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "default",
+  "description": "הרשאות ברירת מחדל לחלון הראשי",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "shell:allow-open",
+    "dialog:allow-save"
+  ]
+}

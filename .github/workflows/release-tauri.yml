@@ -1,0 +1,80 @@
+name: Release Tauri app (Windows)
+
+on:
+  push:
+    branches: [main]
+    paths: ['tauri-app/**']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump patch version
+        id: bump
+        shell: pwsh
+        run: |
+          $confPath = "tauri-app/src-tauri/tauri.conf.json"
+          $conf = Get-Content $confPath -Raw | ConvertFrom-Json
+          $parts = $conf.version -split '\.'
+          $patch = [int]$parts[2] + 1
+          $newVersion = "$($parts[0]).$($parts[1]).$patch"
+          $conf.version = $newVersion
+          $conf | ConvertTo-Json -Depth 20 | Set-Content $confPath
+
+          $cargoPath = "tauri-app/src-tauri/Cargo.toml"
+          (Get-Content $cargoPath) -replace '^version = "[^"]*"', "version = `"$newVersion`"" | Set-Content $cargoPath
+
+          echo "NEW_VERSION=$newVersion" >> $env:GITHUB_ENV
+          echo "בונה גרסה $newVersion"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'tauri-app/src-tauri -> target'
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Generate icons from logo
+        working-directory: tauri-app
+        run: cargo tauri icon assets/logo.svg
+
+      - name: Build
+        working-directory: tauri-app
+        run: cargo tauri build
+
+      - name: Rename exe with version
+        shell: pwsh
+        run: |
+          $src = "tauri-app/src-tauri/target/release/otzaria-plugins-store.exe"
+          $dst = "tauri-app/src-tauri/target/release/otzaria-plugins-store-v$($env:NEW_VERSION).exe"
+          Copy-Item $src $dst
+
+      - name: Commit version bump
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tauri-app/src-tauri/tauri.conf.json tauri-app/src-tauri/Cargo.toml
+          git commit -m "chore: release Tauri app v$($env:NEW_VERSION) [skip ci]"
+          git tag "v$($env:NEW_VERSION)"
+          git push origin HEAD:main
+          git push origin "v$($env:NEW_VERSION)"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          name: v${{ env.NEW_VERSION }}
+          files: tauri-app/src-tauri/target/release/otzaria-plugins-store-v${{ env.NEW_VERSION }}.exe

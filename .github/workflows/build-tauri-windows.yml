@@ -1,0 +1,43 @@
+name: Build Tauri app (Windows)
+
+on:
+  push:
+    branches: [feature/tauri-lightweight-rewrite]
+    paths: ['tauri-app/**', '.github/workflows/build-tauri-windows.yml']
+  pull_request:
+    branches: [main]
+    paths: ['tauri-app/**']
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: tauri-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'tauri-app/src-tauri -> target'
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Generate icons from logo
+        run: cargo tauri icon assets/logo.svg
+
+      - name: Build
+        run: cargo tauri build
+
+      - name: Upload portable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: otzaria-plugins-store-windows
+          path: tauri-app/src-tauri/target/release/*.exe
+          if-no-files-found: error
