@@ -1,6 +1,6 @@
 [package]
 name = "otzaria-plugins-store"
-version = "1.0.5"
+version = "1.0.6"
 description = "חנות תוספים לאוצריא - גרסה אופליין למחשב (Windows)"
 authors = ["Otzaria"]
 edition = "2021"
@@ -9,7 +9,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
