@@ -2,16 +2,16 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data:; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' asset: http://asset.localhost https://asset.localhost; img-src 'self' asset: http://asset.localhost https://asset.localhost data:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
   <title>חנות תוספים לאוצריא - אופליין</title>
-  <link rel="icon" href="../assets/logo.svg" />
+  <link rel="icon" href="assets/logo.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
     <div class="app-header__inner">
       <div class="app-header__brand">
-        <img src="../assets/logo.svg" alt="אוצריא" class="app-header__logo" />
+        <img src="assets/logo.svg" alt="אוצריא" class="app-header__logo" />
         <div>
           <div class="app-header__title">חנות תוספים לאוצריא</div>
           <div class="app-header__subtitle">גרסה אופליין למחשב</div>
@@ -46,6 +46,7 @@
     </div>
   </div>
 
+  <script src="tauri-bridge.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
