@@ -30,6 +30,7 @@
       return decorate(plugin)
     },
     syncNow: () => invoke('sync_now'),
+    checkForUpdates: () => invoke('check_for_updates'),
     getInstalledPlugins: () => invoke('get_installed_plugins'),
     downloadPlugin: (id) => invoke('download_plugin', { id }),
     directInstallPlugin: (id) => invoke('direct_install_plugin', { id }),

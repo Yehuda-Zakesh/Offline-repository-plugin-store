@@ -1,6 +1,6 @@
 [package]
 name = "otzaria-plugins-store"
-version = "1.0.6"
+version = "1.0.8"
 description = "חנות תוספים לאוצריא - גרסה אופליין למחשב (Windows)"
 authors = ["Otzaria"]
 edition = "2021"

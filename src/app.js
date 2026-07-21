@@ -18,7 +18,8 @@
     status: 'all',
     tag: 'all',
     installedMap: {}, // { pluginId: 'installedVersion' } - נטען מאוצריא בפועל אצל המשתמש
-    hideInstalled: true // הצג רק מה שלא מותקן / יש לו עדכון זמין - מופעל כברירת מחדל
+    hideInstalled: true, // הצג רק מה שלא מותקן / יש לו עדכון זמין - מופעל כברירת מחדל
+    tagsExpanded: false // רשימת התגיות מוצגת מקופלת (כמו באתר המקורי) עד לחיצה על "הצג עוד"
   }
 
   // ---------- השוואת גרסאות (semver בסיסי: major.minor.patch) ----------
@@ -205,7 +206,7 @@
   }
 
   function pluginCardHtml(plugin) {
-    const imgSrc = plugin.imageUrl || '../assets/logo.svg'
+    const imgSrc = plugin.imageUrl || 'assets/logo.svg'
     const tags = (plugin.tags || []).slice(0, 4)
     const installBadge = INSTALL_STATUS_BADGE[getInstallStatus(plugin)] || ''
     return `
@@ -287,9 +288,13 @@
           </div>
         </div>
         ${allTags.length > 0 ? `
-          <div class="tags-row">
-            <button class="tag-pill ${state.tag === 'all' ? 'active' : ''}" data-tag="all">כל התגיות</button>
-            ${allTags.map((t) => `<button class="tag-pill ${state.tag === t ? 'active' : ''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}
+          <div class="tags-row-wrap">
+            <div class="tags-row ${state.tagsExpanded ? 'expanded' : ''}" id="tags-row">
+              <button class="tag-pill ${state.tag === 'all' ? 'active' : ''}" data-tag="all">כל התגיות</button>
+              ${allTags.map((t) => `<button class="tag-pill ${state.tag === t ? 'active' : ''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}
+            </div>
+            ${allTags.length > 10 ? `
+              <button type="button" id="tags-toggle-btn" class="tags-toggle-btn">${state.tagsExpanded ? 'הצג פחות' : 'הצג עוד'}</button>` : ''}
           </div>` : ''}
       </section>
 
@@ -329,6 +334,14 @@
       })
     })
 
+    const tagsToggleBtn = document.getElementById('tags-toggle-btn')
+    if (tagsToggleBtn) {
+      tagsToggleBtn.addEventListener('click', () => {
+        state.tagsExpanded = !state.tagsExpanded
+        renderList()
+      })
+    }
+
     root.querySelectorAll('.plugin-card').forEach((card) => {
       const id = card.dataset.id
       card.querySelectorAll('[data-action="open-detail"]').forEach((el) => {
@@ -362,7 +375,7 @@
     }
 
     lightboxIndex = null
-    const imgSrc = plugin.imageUrl || '../assets/logo.svg'
+    const imgSrc = plugin.imageUrl || 'assets/logo.svg'
     const screenshots = plugin.screenshotUrls || []
 
     root.innerHTML = `
@@ -606,6 +619,52 @@
     })
   }
 
+  // ---------- בדיקת עדכונים ברקע (איקון קטן למטה) ----------
+  // בודקת בשקט אם יש עדכון בקטלוג. אם כן - מסנכרנת אוטומטית. אם לא - מציגה
+  // "מעודכן" לכמה שניות ונעלמת.
+
+  const updateCheckIndicator = document.getElementById('update-check-indicator')
+  let updateCheckHideTimer = null
+
+  function setUpdateCheckIndicator(mode, html) {
+    if (!updateCheckIndicator) return
+    if (updateCheckHideTimer) {
+      clearTimeout(updateCheckHideTimer)
+      updateCheckHideTimer = null
+    }
+    if (mode === 'hidden') {
+      updateCheckIndicator.classList.add('hidden')
+      return
+    }
+    updateCheckIndicator.classList.remove('hidden')
+    updateCheckIndicator.innerHTML = html
+    if (mode === 'done') {
+      updateCheckHideTimer = setTimeout(() => setUpdateCheckIndicator('hidden'), 4000)
+    }
+  }
+
+  async function checkForUpdatesQuietly() {
+    if (!navigator.onLine) return
+    if (syncOverlay && !syncOverlay.classList.contains('hidden')) return // סנכרון מלא כבר רץ
+    setUpdateCheckIndicator('checking', '<span class="spin">⟳</span> בודק אם יש עדכונים בחנות...')
+    try {
+      const result = await window.api.checkForUpdates()
+      if (result && result.updatesAvailable) {
+        setUpdateCheckIndicator('checking', `🔔 נמצא עדכון (${result.count}) - מסנכרן אוטומטית...`)
+        await runSync()
+        setUpdateCheckIndicator('done', '✓ מעודכן')
+      } else {
+        setUpdateCheckIndicator('done', '✓ מעודכן')
+      }
+    } catch (err) {
+      console.error('checkForUpdates error', err)
+      setUpdateCheckIndicator('hidden')
+    }
+  }
+
+  window.addEventListener('online', checkForUpdatesQuietly)
+  setInterval(checkForUpdatesQuietly, 30 * 60 * 1000) // כל חצי שעה, כל עוד האפליקציה פתוחה ויש רשת
+
   // ---------- אתחול ----------
 
   async function init() {
@@ -620,6 +679,8 @@
 
     const updatable = getUpdatablePlugins()
     if (updatable.length > 0) showUpdatesModal(updatable)
+
+    checkForUpdatesQuietly()
   }
 
   init()
