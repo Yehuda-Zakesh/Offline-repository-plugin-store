@@ -365,6 +365,53 @@ fn get_installed_plugins() -> HashMap<String, String> {
     result
 }
 
+// ---- בדיקה קלה אם יש עדכונים בחנות (בלי להוריד כלום - רק את רשימת הקטלוג) ----
+// נועדה לריצה ברקע בשקט (איקון קטן), לא לסנכרון בפועל.
+
+#[tauri::command]
+async fn check_for_updates() -> Result<Value, String> {
+    let paths = app_paths();
+    let db = load_db(&paths);
+    let local_versions: HashMap<String, String> = db
+        .get("plugins")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|p| {
+                    let id = p.get("id").and_then(|v| v.as_str())?.to_string();
+                    let version = p.get("version").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    Some((id, version))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let client = reqwest::Client::new();
+    let res = client
+        .get(format!("{}/api/plugins", BASE_URL))
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !res.status().is_success() {
+        return Err(format!("HTTP {}", res.status()));
+    }
+    let remote_plugins: Vec<Value> = res.json().await.map_err(|e| e.to_string())?;
+
+    let mut count = 0;
+    for rp in &remote_plugins {
+        let id = rp.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let remote_version = rp.get("version").and_then(|v| v.as_str()).unwrap_or("");
+        match local_versions.get(id) {
+            None => count += 1,
+            Some(local_version) if local_version != remote_version => count += 1,
+            _ => {}
+        }
+    }
+
+    Ok(json!({ "updatesAvailable": count > 0, "count": count }))
+}
+
 // ---- עיטור תוצאה לרנדרר: מוסיפים נתיבים מוחלטים גולמיים (imagePath/screenshotPaths).
 // ה-JS בצד הלקוח (tauri-bridge.js) ממיר אותם ל-asset: URL באמצעות convertFileSrc,
 // כי webview של Tauri (בניגוד ל-Electron) לא טוען file:// ישירות מטעמי אבטחה.
@@ -565,6 +612,7 @@ async fn main() {
             get_plugins,
             get_plugin,
             sync_now,
+            check_for_updates,
             get_installed_plugins,
             download_plugin,
             direct_install_plugin,
