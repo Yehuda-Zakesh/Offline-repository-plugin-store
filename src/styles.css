@@ -308,9 +308,6 @@ button {
 .update-check-indicator.hidden {
   display: none;
 }
-.update-check-indicator.clickable {
-  cursor: pointer;
-}
 .update-check-indicator .spin {
   display: inline-block;
   animation: update-indicator-spin 1s linear infinite;

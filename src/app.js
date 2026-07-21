@@ -619,26 +619,27 @@
     })
   }
 
-  // ---------- בדיקת עדכונים ברקע (איקון קטן למטה, בלי סנכרון אוטומטי) ----------
+  // ---------- בדיקת עדכונים ברקע (איקון קטן למטה) ----------
+  // בודקת בשקט אם יש עדכון בקטלוג. אם כן - מסנכרנת אוטומטית. אם לא - מציגה
+  // "מעודכן" לכמה שניות ונעלמת.
 
   const updateCheckIndicator = document.getElementById('update-check-indicator')
+  let updateCheckHideTimer = null
 
   function setUpdateCheckIndicator(mode, html) {
     if (!updateCheckIndicator) return
+    if (updateCheckHideTimer) {
+      clearTimeout(updateCheckHideTimer)
+      updateCheckHideTimer = null
+    }
     if (mode === 'hidden') {
       updateCheckIndicator.classList.add('hidden')
-      updateCheckIndicator.classList.remove('clickable')
-      updateCheckIndicator.onclick = null
       return
     }
     updateCheckIndicator.classList.remove('hidden')
     updateCheckIndicator.innerHTML = html
-    if (mode === 'available') {
-      updateCheckIndicator.classList.add('clickable')
-      updateCheckIndicator.onclick = () => runSync()
-    } else {
-      updateCheckIndicator.classList.remove('clickable')
-      updateCheckIndicator.onclick = null
+    if (mode === 'done') {
+      updateCheckHideTimer = setTimeout(() => setUpdateCheckIndicator('hidden'), 4000)
     }
   }
 
@@ -649,9 +650,11 @@
     try {
       const result = await window.api.checkForUpdates()
       if (result && result.updatesAvailable) {
-        setUpdateCheckIndicator('available', `🔔 יש עדכון בחנות (${result.count}) - לחצו לסנכרון`)
+        setUpdateCheckIndicator('checking', `🔔 נמצא עדכון (${result.count}) - מסנכרן אוטומטית...`)
+        await runSync()
+        setUpdateCheckIndicator('done', '✓ מעודכן')
       } else {
-        setUpdateCheckIndicator('hidden')
+        setUpdateCheckIndicator('done', '✓ מעודכן')
       }
     } catch (err) {
       console.error('checkForUpdates error', err)
